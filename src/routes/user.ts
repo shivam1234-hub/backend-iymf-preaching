@@ -23,9 +23,73 @@ function cleanObjectId(id: string | undefined): mongoose.Types.ObjectId | undefi
 
 
 router.post('/add', asyncHandler(async (req: Request, res: Response) => {
-    const user = new User(req.body);
-    const saved = await user.save();
-    res.status(201).json(saved);
+    try {
+        const user = new User(req.body);
+        const saved = await user.save();
+        res.status(201).json({
+            success: true,
+            message: 'User created successfully',
+            data: saved
+        });
+    } catch (error: any) {
+        console.error('Error creating user:', error);
+
+        // Handle MongoDB duplicate key error (E11000)
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern || {})[0] || 'field';
+            const value = error.keyValue?.[field] || 'unknown';
+
+            return res.status(409).json({
+                success: false,
+                message: `A user with this ${field} already exists: ${value}`,
+                error: 'DUPLICATE_KEY_ERROR',
+                field: field,
+                value: value
+            });
+        }
+
+        // Handle Mongoose validation errors
+        if (error.name === 'ValidationError') {
+            const validationErrors = Object.values(error.errors || {}).map((err: any) => ({
+                field: err.path,
+                message: err.message,
+                value: err.value
+            }));
+
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                error: 'VALIDATION_ERROR',
+                details: validationErrors
+            });
+        }
+
+        // Handle cast errors (invalid ObjectId, etc.)
+        if (error.name === 'CastError') {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid ${error.path}: ${error.value}`,
+                error: 'CAST_ERROR',
+                field: error.path
+            });
+        }
+
+        // Handle other MongoDB errors
+        if (error.name === 'MongoServerError') {
+            return res.status(500).json({
+                success: false,
+                message: 'Database operation failed',
+                error: 'MONGO_SERVER_ERROR'
+            });
+        }
+
+        // Handle generic errors
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'An unexpected error occurred while creating the user',
+            error: 'INTERNAL_SERVER_ERROR'
+        });
+    }
 }));
 
 router.get('/', asyncHandler(async (req: Request, res: Response) => {

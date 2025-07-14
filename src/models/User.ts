@@ -15,6 +15,7 @@ export interface IUser extends Document {
   attendance: {
     session: mongoose.Types.ObjectId;
     present: boolean;
+    markedAt?: Date;
   }[];
   sadhna: {
     date: Date,
@@ -39,7 +40,9 @@ const UserSchema = new Schema({
   mentorId: { type: Schema.Types.ObjectId, ref: 'User' },
   mentees: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   attendance: [{
-    session: { type: Schema.Types.ObjectId, ref: 'Session' }
+    session: { type: Schema.Types.ObjectId, ref: 'Session', required: true },
+    present: { type: Boolean, required: true },
+    markedAt: { type: Date, default: Date.now }
   }],
   sadhna: [{
     date: Date,
