@@ -189,5 +189,74 @@ router.post('/bulk-add', upload.single('file'), asyncHandler(async (req: Request
         });
 }));
 
+// Bulk mark attendance by user IDs
+router.post('/attendance/bulk-mark', asyncHandler(async (req: Request, res: Response) => {
+    const { sessionId, userIds } = req.body;
+    // userIds: [string] - array of user IDs
+
+    if (!sessionId || !Array.isArray(userIds)) {
+        return res.status(400).json({ error: 'Session ID and userIds array are required' });
+    }
+
+    const results: {
+        success: Array<{ userId: string; name: string; contact: string }>;
+        failed: Array<{ userId: string; error: string }>;
+    } = {
+        success: [],
+        failed: []
+    };
+
+    for (const userId of userIds) {
+        try {
+            const user = await User.findById(userId);
+            if (!user) {
+                results.failed.push({
+                    userId,
+                    error: 'User not found'
+                });
+                continue;
+            }
+
+            // Check if attendance already exists
+            const existingAttendance = user.attendance.find(
+                att => att.session.toString() === sessionId
+            );
+
+            if (existingAttendance) {
+                results.failed.push({
+                    userId,
+                    error: 'Attendance already marked for this session'
+                });
+                continue;
+            }
+
+            // Add attendance
+            user.attendance.push({
+                session: new mongoose.Types.ObjectId(sessionId),
+                present: true,
+                markedAt: new Date()
+            });
+
+            await user.save();
+
+            results.success.push({
+                userId,
+                name: user.name,
+                contact: user.contact
+            });
+
+        } catch (error) {
+            results.failed.push({
+                userId,
+                error: (error as Error).message
+            });
+        }
+    }
+
+    res.json({
+        message: `Attendance marked for ${results.success.length} users`,
+        results
+    });
+}));
 
 export default router;
