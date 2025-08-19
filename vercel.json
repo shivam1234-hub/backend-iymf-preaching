@@ -4,7 +4,7 @@
         "src": "src/server.ts",
         "use": "@vercel/node",
         "config": {
-            "includeFiles": ["*"]
+            "includeFiles": ["src/**/*"]
         }
     }],
     "routes": [
@@ -12,6 +12,10 @@
             "src": "/(.*)",
             "dest": "/src/server.ts"
         }
-    ]
-    
+    ],
+    "functions": {
+        "src/server.ts": {
+            "maxDuration": 30
+        }
+    }
 }
