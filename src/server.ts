@@ -16,10 +16,8 @@ import { User, Pg, Center, Location, Session, Service,Batch } from './models';
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-
-// File upload config
-const upload = multer({ dest: 'uploads/' });
 
   app.use('/center', centerRoutes);
   app.use('/batch', batchRoutes);
