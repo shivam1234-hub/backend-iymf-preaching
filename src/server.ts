@@ -1,39 +1,34 @@
-// Express App Setup
-import express, { Request, Response } from 'express';
-import mongoose, { Model } from 'mongoose';
-import multer from 'multer';
-import csv from 'csv-parser';
-import fs from 'fs';
+import express from 'express';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 import cors from 'cors';
-import path from 'path';
+
 import centerRoutes from './routes/center';
 import batchRoutes from './routes/batch';
 import serviceRoutes from './routes/service';
 import userRoutes from './routes/user';
 import sessionRoutes from './routes/session';
 
-import { User, Pg, Center, Location, Session, Service,Batch } from './models';
+dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-  app.use('/center', centerRoutes);
-  app.use('/batch', batchRoutes);
-  app.use('/service', serviceRoutes);
-  app.use('/user', userRoutes);
-  app.use('/session', sessionRoutes);
+// routes
+app.use('/center', centerRoutes);
+app.use('/batch', batchRoutes);
+app.use('/service', serviceRoutes);
+app.use('/user', userRoutes);
+app.use('/session', sessionRoutes);
 
-// Connect to MongoDB
-mongoose.connect('mongodb+srv://shivamvijay543:86xH5JUuxNajPqxf@cluster0.zamipz9.mongodb.net/iskcon?retryWrites=true&w=majority&appName=Cluster0')
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// Mongo connection
+mongoose.connect(process.env.MONGO_URI as string)
+    .then(() => console.log('Connected to MongoDB'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
-// For local development
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(3000, () => console.log('Server running on 3000'));
-}
-
-// Export for Vercel serverless
-export default app;
+// Port: use Render’s injected PORT or fallback
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
