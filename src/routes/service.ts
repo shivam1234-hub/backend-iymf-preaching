@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import Service from '../models/Service';
-import fs from 'fs';
+import * as fs from 'fs';
 import csv from 'csv-parser';
 import { asyncHandler } from '../utils';
 import multer from 'multer';
